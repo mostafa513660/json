@@ -3,6 +3,7 @@ from function_script import get_id  # Import the get_id function
 from ip1 import get_ip  # Import the get_ip function
 from bin1 import get_bin_info  # Import the get_bin_info function
 from credit_card_gen import generate_cc
+from the_gate import gate
 
 BOT_TOKEN = '6023140310:AAFWwGXvsIOqFKqdKwx5q8CUF7DUAJJy7jA'
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -31,5 +32,11 @@ def handle_gen(message):
 def handle_bin(message):
     response = get_bin_info(message)
     bot.send_message(message.chat.id, response)
+
+@bot.message_handler(commands=['chk'])
+def handle_gen(message):
+    card_info = message.text.split('/chk ', 1)[1]
+    response = gate(card_info)
+    bot.send_message(message.chat.id, response, parse_mode='HTML')
 
 bot.polling(none_stop=True)
