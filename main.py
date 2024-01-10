@@ -36,7 +36,7 @@ def handle_bin(message):
 @bot.message_handler(commands=['chk'])
 def handle_gen(message):
     card_info = message.text.split('/chk ', 1)[1]
-    response = gate(card_info)
+    response = gate(card_info, message.from_user.first_name)
     bot.send_message(message.chat.id, response, parse_mode='HTML')
 
 bot.polling(none_stop=True)
